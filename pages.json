@@ -1,0 +1,67 @@
+{
+  "pages": [
+    {
+      "path": "pages/index/index",
+      "style": {
+        "navigationBarTitleText": "记意 Parli"
+      }
+    },
+    {
+      "path": "pages/books/books",
+      "style": {
+        "navigationBarTitleText": "书籍选择"
+      }
+    },
+    {
+      "path": "pages/profile/profile",
+      "style": {
+        "navigationBarTitleText": "个人主页"
+      }
+    },
+    {
+      "path": "pages/learn/learn",
+      "style": {
+        "navigationBarTitleText": "学习模式"
+      }
+    },
+    {
+      "path": "pages/review/review",
+      "style": {
+        "navigationBarTitleText": "复习模式"
+      }
+    },
+    {
+      "path": "pages/quiz/quiz",
+      "style": {
+        "navigationBarTitleText": "随机抽查"
+      }
+    }
+  ],
+  "globalStyle": {
+    "navigationBarTextStyle": "white",
+    "navigationBarTitleText": "记意 Parli",
+    "navigationBarBackgroundColor": "#667eea",
+    "backgroundColor": "#667eea"
+  },
+  "tabBar": {
+    "color": "#999999",
+    "selectedColor": "#667eea",
+    "borderStyle": "black",
+    "backgroundColor": "#ffffff",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "📚 学习"
+      },
+      {
+        "pagePath": "pages/books/books",
+        "text": "📖 书籍"
+      },
+      {
+        "pagePath": "pages/profile/profile",
+        "text": "👤 我的"
+      }
+    ]
+  },
+  "uniIdRouter": {}
+}

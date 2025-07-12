@@ -1,0 +1,189 @@
+
+.container.data-v-dd383ca2 {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 40rpx;
+}
+.user-section.data-v-dd383ca2 {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 24rpx;
+  padding: 50rpx;
+  margin-bottom: 40rpx;
+  -webkit-backdrop-filter: blur(10px);
+          backdrop-filter: blur(10px);
+  text-align: center;
+}
+.avatar-container.data-v-dd383ca2 {
+  margin-bottom: 40rpx;
+}
+.avatar.data-v-dd383ca2 {
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 60rpx;
+  background: rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 60rpx;
+  margin: 0 auto 30rpx auto;
+}
+.login-btn.data-v-dd383ca2 {
+  color: white;
+  font-size: 32rpx;
+  font-weight: bold;
+}
+.user-stats.data-v-dd383ca2 {
+  display: flex;
+  justify-content: space-around;
+  gap: 20rpx;
+}
+.stat-item.data-v-dd383ca2 {
+  text-align: center;
+  color: white;
+}
+.stat-number.data-v-dd383ca2 {
+  font-size: 48rpx;
+  font-weight: bold;
+  color: #FFD700;
+  margin-bottom: 10rpx;
+}
+.stat-label.data-v-dd383ca2 {
+  font-size: 24rpx;
+  opacity: 0.9;
+}
+.achievements-section.data-v-dd383ca2,
+.books-progress-section.data-v-dd383ca2,
+.settings-section.data-v-dd383ca2 {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 20rpx;
+  padding: 40rpx;
+  margin-bottom: 30rpx;
+  -webkit-backdrop-filter: blur(10px);
+          backdrop-filter: blur(10px);
+}
+.section-title.data-v-dd383ca2 {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: white;
+  margin-bottom: 30rpx;
+}
+.achievements-grid.data-v-dd383ca2 {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+}
+.achievement-card.data-v-dd383ca2 {
+  display: flex;
+  align-items: center;
+  padding: 30rpx;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 15rpx;
+  position: relative;
+  opacity: 0.5;
+}
+.achievement-card.unlocked.data-v-dd383ca2 {
+  opacity: 1;
+  background: rgba(255, 215, 0, 0.2);
+}
+.achievement-icon.data-v-dd383ca2 {
+  font-size: 48rpx;
+  margin-right: 30rpx;
+}
+.achievement-info.data-v-dd383ca2 {
+  flex: 1;
+  color: white;
+}
+.achievement-title.data-v-dd383ca2 {
+  font-size: 28rpx;
+  font-weight: bold;
+  margin-bottom: 8rpx;
+}
+.achievement-desc.data-v-dd383ca2 {
+  font-size: 24rpx;
+  opacity: 0.8;
+}
+.achievement-badge.data-v-dd383ca2 {
+  position: absolute;
+  top: 10rpx;
+  right: 10rpx;
+  width: 40rpx;
+  height: 40rpx;
+  background: #FFD700;
+  border-radius: 20rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20rpx;
+  color: #333;
+  font-weight: bold;
+}
+.books-progress-list.data-v-dd383ca2 {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+}
+.book-progress-item.data-v-dd383ca2 {
+  display: flex;
+  align-items: center;
+  padding: 20rpx;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 15rpx;
+}
+.book-icon.data-v-dd383ca2 {
+  font-size: 40rpx;
+  margin-right: 30rpx;
+}
+.book-info.data-v-dd383ca2 {
+  flex: 1;
+  color: white;
+}
+.book-title.data-v-dd383ca2 {
+  font-size: 28rpx;
+  font-weight: bold;
+  margin-bottom: 15rpx;
+}
+.progress-bar.data-v-dd383ca2 {
+  height: 8rpx;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 4rpx;
+  overflow: hidden;
+  margin-bottom: 10rpx;
+}
+.progress-fill.data-v-dd383ca2 {
+  height: 100%;
+  transition: width 0.3s ease;
+}
+.progress-text.data-v-dd383ca2 {
+  font-size: 24rpx;
+  opacity: 0.8;
+}
+.settings-list.data-v-dd383ca2 {
+  display: flex;
+  flex-direction: column;
+  gap: 15rpx;
+}
+.setting-item.data-v-dd383ca2 {
+  display: flex;
+  align-items: center;
+  padding: 30rpx;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 15rpx;
+  color: white;
+  transition: all 0.3s ease;
+}
+.setting-item.data-v-dd383ca2:active {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(0.98);
+}
+.setting-icon.data-v-dd383ca2 {
+  font-size: 32rpx;
+  margin-right: 30rpx;
+}
+.setting-text.data-v-dd383ca2 {
+  flex: 1;
+  font-size: 28rpx;
+}
+.setting-arrow.data-v-dd383ca2 {
+  font-size: 24rpx;
+  opacity: 0.6;
+}

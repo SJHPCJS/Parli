@@ -1,0 +1,37 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/books/books",
+    "pages/profile/profile",
+    "pages/learn/learn",
+    "pages/review/review",
+    "pages/quiz/quiz"
+  ],
+  "window": {
+    "navigationBarTextStyle": "white",
+    "navigationBarTitleText": "记意 Parli",
+    "navigationBarBackgroundColor": "#667eea",
+    "backgroundColor": "#667eea"
+  },
+  "tabBar": {
+    "color": "#999999",
+    "selectedColor": "#667eea",
+    "borderStyle": "black",
+    "backgroundColor": "#ffffff",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "📚 学习"
+      },
+      {
+        "pagePath": "pages/books/books",
+        "text": "📖 书籍"
+      },
+      {
+        "pagePath": "pages/profile/profile",
+        "text": "👤 我的"
+      }
+    ]
+  },
+  "usingComponents": {}
+}
