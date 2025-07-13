@@ -1,6 +1,7 @@
 "use strict";
 const common_vendor = require("../../common/vendor.js");
 const utils_bookData = require("../../utils/bookData.js");
+const utils_wordData = require("../../utils/wordData.js");
 const _sfc_main = {
   data() {
     return {
@@ -20,7 +21,7 @@ const _sfc_main = {
       isCompleted: false,
       wrongWords: [],
       hasWrongWords: false,
-      posMap: utils_bookData.posMap,
+      posMap: utils_wordData.posMap,
       currentBook: {}
     };
   },
