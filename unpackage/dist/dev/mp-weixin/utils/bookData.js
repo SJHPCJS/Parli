@@ -123,6 +123,20 @@ function addLearnedWordToCurrentBook(wordId) {
     common_vendor.index.__f__("error", "at utils/bookData.js:146", "添加已学词汇失败:", e);
   }
 }
+function removeLearnedWordFromCurrentBook(wordId) {
+  const currentBook = getCurrentBook();
+  try {
+    const learnedWordsKey = `learned_words_book_${currentBook.id}`;
+    const learnedWordIds = common_vendor.index.getStorageSync(learnedWordsKey) || [];
+    const index = learnedWordIds.indexOf(wordId);
+    if (index > -1) {
+      learnedWordIds.splice(index, 1);
+      common_vendor.index.setStorageSync(learnedWordsKey, learnedWordIds);
+    }
+  } catch (e) {
+    common_vendor.index.__f__("error", "at utils/bookData.js:162", "移除已学词汇失败:", e);
+  }
+}
 function getRandomWordsForQuiz(count = 10) {
   const currentBookWords = getCurrentBookWords();
   if (currentBookWords.length === 0)
@@ -139,6 +153,7 @@ exports.getCurrentBookLearnedWords = getCurrentBookLearnedWords;
 exports.getCurrentBookWords = getCurrentBookWords;
 exports.getCurrentBookWrongWords = getCurrentBookWrongWords;
 exports.getRandomWordsForQuiz = getRandomWordsForQuiz;
+exports.removeLearnedWordFromCurrentBook = removeLearnedWordFromCurrentBook;
 exports.removeWrongWordFromCurrentBook = removeWrongWordFromCurrentBook;
 exports.saveBookProgress = saveBookProgress;
 exports.setCurrentBook = setCurrentBook;

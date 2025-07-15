@@ -8,6 +8,8 @@ if (!Math) {
   "./pages/learn/learn.js";
   "./pages/review/review.js";
   "./pages/quiz/quiz.js";
+  "./pages/search/search.js";
+  "./pages/wordDetail/wordDetail.js";
 }
 const _sfc_main = {
   onLaunch: function() {

@@ -36,6 +36,12 @@ const _sfc_main = {
   },
   onShow() {
     this.initReview();
+    common_vendor.index.$on("continueNext", () => {
+      this.nextQuestion();
+    });
+  },
+  onUnload() {
+    common_vendor.index.$off("continueNext");
   },
   methods: {
     initReview() {
@@ -120,6 +126,11 @@ const _sfc_main = {
       common_vendor.index.redirectTo({
         url: "/pages/learn/learn"
       });
+    },
+    goToWordDetail() {
+      common_vendor.index.navigateTo({
+        url: `/pages/wordDetail/wordDetail?wordId=${this.current.id}&fromPage=review`
+      });
     }
   }
 };
@@ -166,19 +177,23 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
     w: common_vendor.o((...args) => $options.checkSpelling && $options.checkSpelling(...args)),
     x: !$data.userInput.trim(),
     y: $data.showSpellingResult
-  }, $data.showSpellingResult ? {
+  }, $data.showSpellingResult ? common_vendor.e({
     z: common_vendor.t($data.spellingResult ? "正确！" : `错误！正确答案是：${$data.current.word}`),
     A: $data.spellingResult ? 1 : "",
     B: !$data.spellingResult ? 1 : "",
-    C: common_vendor.o((...args) => $options.nextQuestion && $options.nextQuestion(...args))
-  } : {}) : {}, {
-    D: $data.isCompleted
+    C: $data.spellingResult
+  }, $data.spellingResult ? {
+    D: common_vendor.o((...args) => $options.goToWordDetail && $options.goToWordDetail(...args))
+  } : {
+    E: common_vendor.o((...args) => $options.nextQuestion && $options.nextQuestion(...args))
+  }) : {}) : {}, {
+    F: $data.isCompleted
   }, $data.isCompleted ? {
-    E: common_vendor.t($data.totalQuestions),
-    F: common_vendor.t($data.masteredWords),
-    G: common_vendor.t($data.remainingWords),
-    H: common_vendor.o((...args) => $options.restartReview && $options.restartReview(...args)),
-    I: common_vendor.o((...args) => $options.goHome && $options.goHome(...args))
+    G: common_vendor.t($data.totalQuestions),
+    H: common_vendor.t($data.masteredWords),
+    I: common_vendor.t($data.remainingWords),
+    J: common_vendor.o((...args) => $options.restartReview && $options.restartReview(...args)),
+    K: common_vendor.o((...args) => $options.goHome && $options.goHome(...args))
   } : {}));
 }
 const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render], ["__scopeId", "data-v-7018a65d"]]);

@@ -5,7 +5,9 @@
     "pages/profile/profile",
     "pages/learn/learn",
     "pages/review/review",
-    "pages/quiz/quiz"
+    "pages/quiz/quiz",
+    "pages/search/search",
+    "pages/wordDetail/wordDetail"
   ],
   "window": {
     "navigationBarTextStyle": "white",
@@ -26,6 +28,10 @@
       {
         "pagePath": "pages/books/books",
         "text": "📖 书籍"
+      },
+      {
+        "pagePath": "pages/search/search",
+        "text": "🔍 查词"
       },
       {
         "pagePath": "pages/profile/profile",

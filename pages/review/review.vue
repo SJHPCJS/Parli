@@ -66,10 +66,43 @@
         
         <view v-if="showSpellingResult" class="result-container">
           <view class="result-text" :class="{ 'correct': spellingResult, 'wrong': !spellingResult }">
-            {{ spellingResult ? '正确！' : `错误！正确答案是：${current.word}` }}
+            {{ spellingResult ? '拼写正确！' : `错误！正确答案是：${current.word}` }}
           </view>
-          <button class="next-btn" @click="nextQuestion">下一题</button>
+          <button v-if="!spellingResult" class="next-btn" @click="nextQuestion">下一题</button>
         </view>
+      </view>
+
+      <!-- 单词详情展示 -->
+      <view v-if="showWordDetail" class="word-detail-container">
+        <view class="detail-header">
+          <view class="detail-title">单词详情</view>
+        </view>
+        
+        <view class="detail-content">
+          <view class="word-display-large">{{ current.word }}</view>
+          
+          <view class="detail-item">
+            <view class="detail-label">词性</view>
+            <view class="detail-value pos-tag">{{ posMap[current.pos] }}</view>
+          </view>
+          
+          <view class="detail-item">
+            <view class="detail-label">中文意思</view>
+            <view class="detail-value meaning-text">{{ current.meaning }}</view>
+          </view>
+          
+          <view class="detail-item">
+            <view class="detail-label">学习状态</view>
+            <view class="detail-value">
+              <view class="status-badge mastered">✓ 已掌握</view>
+            </view>
+          </view>
+        </view>
+        
+        <view class="detail-actions">
+          <button class="continue-btn" @click="nextQuestion">下一题</button>
+        </view>
+      </view>
       </view>
 
       <!-- 完成提示 -->
@@ -100,13 +133,15 @@
 <script>
 import { 
   getCurrentBookWords, 
-  posMap, 
-  getCurrentBookWrongWords, 
+  getCurrentBookWordsAsync,
+  getCurrentBookWrongWords,
+  getCurrentBookWrongWordsAsync, 
   addWrongWordToCurrentBook, 
   removeWrongWordFromCurrentBook, 
   addLearnedWordToCurrentBook,
   getCurrentBook
 } from '@/utils/bookData.js'
+import { posMap } from '@/utils/wordData.js'
 
 export default {
   data() {
@@ -120,6 +155,7 @@ export default {
       userInput: '',
       showSpellingResult: false,
       spellingResult: false,
+      showWordDetail: false,
       currentIndex: 0,
       totalQuestions: 0,
       masteredWords: 0,
@@ -145,41 +181,53 @@ export default {
     this.initReview()
   },
   methods: {
-    initReview() {
-      this.wrongWords = getCurrentBookWrongWords()
-      this.hasWrongWords = this.wrongWords.length > 0
-      
-      if (this.hasWrongWords) {
-        this.totalQuestions = this.wrongWords.length
-        this.currentIndex = 0
-        this.masteredWords = 0
-        this.remainingWords = 0
-        this.isCompleted = false
-        this.loadQuestion()
+    async initReview() {
+      try {
+        this.wrongWords = await getCurrentBookWrongWordsAsync()
+        this.hasWrongWords = this.wrongWords.length > 0
+        
+        if (this.hasWrongWords) {
+          this.totalQuestions = this.wrongWords.length
+          this.currentIndex = 0
+          this.masteredWords = 0
+          this.remainingWords = 0
+          this.isCompleted = false
+          await this.loadQuestion()
+        }
+      } catch (error) {
+        console.error('初始化复习失败:', error)
+        this.hasWrongWords = false
+        this.wrongWords = []
       }
     },
     
-    loadQuestion() {
+    async loadQuestion() {
       if (this.currentIndex >= this.totalQuestions) {
         this.isCompleted = true
         return
       }
       
       this.current = this.wrongWords[this.currentIndex]
-      this.generateOptions()
+      await this.generateOptions()
       this.resetState()
     },
     
-    generateOptions() {
-      // 从当前书籍中生成干扰项
-      const currentBookWords = getCurrentBookWords()
-      const wrongOptions = currentBookWords
-        .filter(w => w.id !== this.current.id)
-        .sort(() => 0.5 - Math.random())
-        .slice(0, 2)
-      
-      this.options = [this.current, ...wrongOptions]
-        .sort(() => 0.5 - Math.random())
+    async generateOptions() {
+      try {
+        // 从当前书籍中生成干扰项
+        const currentBookWords = await getCurrentBookWordsAsync()
+        const wrongOptions = currentBookWords
+          .filter(w => w.id !== this.current.id)
+          .sort(() => 0.5 - Math.random())
+          .slice(0, 2)
+        
+        this.options = [this.current, ...wrongOptions]
+          .sort(() => 0.5 - Math.random())
+      } catch (error) {
+        console.error('生成选项失败:', error)
+        // 如果获取失败，只显示当前单词
+        this.options = [this.current]
+      }
     },
     
     resetState() {
@@ -190,6 +238,7 @@ export default {
       this.userInput = ''
       this.showSpellingResult = false
       this.spellingResult = false
+      this.showWordDetail = false
     },
     
     selectOption(index, option) {
@@ -224,6 +273,11 @@ export default {
         removeWrongWordFromCurrentBook(this.current.id)
         addLearnedWordToCurrentBook(this.current.id)
         this.masteredWords++
+        
+        // 拼写正确后延迟显示单词详情
+        setTimeout(() => {
+          this.showWordDetail = true
+        }, 1500)
       } else {
         // 仍有错误，保持在错题中
         this.remainingWords++
@@ -234,9 +288,9 @@ export default {
       this.showSpellingResult = false
     },
     
-    nextQuestion() {
+    async nextQuestion() {
       this.currentIndex++
-      this.loadQuestion()
+      await this.loadQuestion()
     },
     
     restartReview() {
@@ -518,5 +572,99 @@ export default {
 .stat-value {
   font-weight: bold;
   color: #00b894;
+}
+
+/* 单词详情样式 */
+.word-detail-container {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 20rpx;
+  padding: 40rpx;
+  margin-top: 40rpx;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.1);
+}
+
+.detail-header {
+  text-align: center;
+  margin-bottom: 40rpx;
+  padding-bottom: 30rpx;
+  border-bottom: 2rpx solid #f0f0f0;
+}
+
+.detail-title {
+  font-size: 36rpx;
+  font-weight: bold;
+  color: #333;
+}
+
+.word-display-large {
+  font-size: 64rpx;
+  font-weight: bold;
+  text-align: center;
+  color: #6c5ce7;
+  margin-bottom: 40rpx;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.detail-item {
+  margin-bottom: 30rpx;
+}
+
+.detail-label {
+  font-size: 24rpx;
+  color: #666;
+  margin-bottom: 10rpx;
+  font-weight: bold;
+}
+
+.detail-value {
+  font-size: 32rpx;
+  color: #333;
+}
+
+.detail-value.pos-tag {
+  background: #e3f2fd;
+  color: #1976d2;
+  padding: 8rpx 16rpx;
+  border-radius: 12rpx;
+  display: inline-block;
+  font-size: 24rpx;
+}
+
+.detail-value.meaning-text {
+  background: #f8f9fa;
+  padding: 20rpx;
+  border-radius: 12rpx;
+  line-height: 1.6;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8rpx;
+  padding: 8rpx 16rpx;
+  border-radius: 16rpx;
+  font-size: 24rpx;
+}
+
+.status-badge.mastered {
+  background: #e8f5e8;
+  color: #00b894;
+}
+
+.detail-actions {
+  text-align: center;
+  margin-top: 40rpx;
+}
+
+.continue-btn {
+  background: #00b894;
+  color: white;
+  border: none;
+  border-radius: 40rpx;
+  padding: 20rpx 60rpx;
+  font-size: 32rpx;
+  font-weight: bold;
+  width: 300rpx;
 }
 </style> 

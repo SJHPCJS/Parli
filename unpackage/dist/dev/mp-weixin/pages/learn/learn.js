@@ -33,6 +33,14 @@ const _sfc_main = {
     this.currentBook = utils_bookData.getCurrentBook();
     this.initLearning();
   },
+  onShow() {
+    common_vendor.index.$on("continueNext", () => {
+      this.nextQuestion();
+    });
+  },
+  onUnload() {
+    common_vendor.index.$off("continueNext");
+  },
   methods: {
     initLearning() {
       this.questionWords = [];
@@ -131,6 +139,11 @@ const _sfc_main = {
     },
     goHome() {
       common_vendor.index.navigateBack();
+    },
+    goToWordDetail() {
+      common_vendor.index.navigateTo({
+        url: `/pages/wordDetail/wordDetail?wordId=${this.current.id}&fromPage=learn`
+      });
     }
   }
 };
@@ -173,19 +186,23 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
     t: common_vendor.o((...args) => $options.checkSpelling && $options.checkSpelling(...args)),
     v: !$data.userInput.trim(),
     w: $data.showSpellingResult
-  }, $data.showSpellingResult ? {
+  }, $data.showSpellingResult ? common_vendor.e({
     x: common_vendor.t($data.spellingResult ? "正确！" : `错误！正确答案是：${$data.current.word}`),
     y: $data.spellingResult ? 1 : "",
     z: !$data.spellingResult ? 1 : "",
-    A: common_vendor.o((...args) => $options.nextQuestion && $options.nextQuestion(...args))
-  } : {}) : {}, {
-    B: $data.isCompleted
+    A: $data.spellingResult
+  }, $data.spellingResult ? {
+    B: common_vendor.o((...args) => $options.goToWordDetail && $options.goToWordDetail(...args))
+  } : {
+    C: common_vendor.o((...args) => $options.nextQuestion && $options.nextQuestion(...args))
+  }) : {}) : {}, {
+    D: $data.isCompleted
   }, $data.isCompleted ? {
-    C: common_vendor.t($data.totalQuestions),
-    D: common_vendor.t(Math.round($data.correctAnswers / $data.totalQuestions * 100)),
-    E: common_vendor.t($data.wrongAnswers),
-    F: common_vendor.o((...args) => $options.restartLearning && $options.restartLearning(...args)),
-    G: common_vendor.o((...args) => $options.goHome && $options.goHome(...args))
+    E: common_vendor.t($data.totalQuestions),
+    F: common_vendor.t(Math.round($data.correctAnswers / $data.totalQuestions * 100)),
+    G: common_vendor.t($data.wrongAnswers),
+    H: common_vendor.o((...args) => $options.restartLearning && $options.restartLearning(...args)),
+    I: common_vendor.o((...args) => $options.goHome && $options.goHome(...args))
   } : {});
 }
 const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render], ["__scopeId", "data-v-f23452e4"]]);

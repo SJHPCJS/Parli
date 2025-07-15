@@ -35,6 +35,24 @@
       "style": {
         "navigationBarTitleText": "随机抽查"
       }
+    },
+    {
+      "path": "pages/search/search",
+      "style": {
+        "navigationBarTitleText": "查词"
+      }
+    },
+    {
+      "path": "pages/wordDetail/wordDetail",
+      "style": {
+        "navigationBarTitleText": "单词详情"
+      }
+    },
+    {
+      "path": "pages/wordList/wordList",
+      "style": {
+        "navigationBarTitleText": "单词列表"
+      }
     }
   ],
   "globalStyle": {
@@ -56,6 +74,10 @@
       {
         "pagePath": "pages/books/books",
         "text": "📖 书籍"
+      },
+      {
+        "pagePath": "pages/search/search",
+        "text": "🔍 查词"
       },
       {
         "pagePath": "pages/profile/profile",

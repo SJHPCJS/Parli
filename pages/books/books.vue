@@ -2,7 +2,7 @@
   <view class="container">
     <view class="header">
       <view class="title">选择学习书籍</view>
-      <view class="subtitle">{{ bookList.length }}本书籍可供选择</view>
+      <view class="subtitle">{{ bookList ? bookList.length : 0 }}本书籍可供选择</view>
     </view>
     
     <view class="books-list">
@@ -111,12 +111,14 @@ export default {
       const progress = getBookProgress(bookId)
       const bookWords = this.getBookWordsCount(bookId)
       if (bookWords === 0) return 0
-      return Math.round((progress.learnedWords.length / bookWords) * 100)
+      const learnedWords = progress && progress.learnedWords ? progress.learnedWords : []
+      return Math.round((learnedWords.length / bookWords) * 100)
     },
     
     getBookWrongCount(bookId) {
       const progress = getBookProgress(bookId)
-      return progress.wrongWords.length
+      const wrongWords = progress && progress.wrongWords ? progress.wrongWords : []
+      return wrongWords.length
     },
     
     getBookWordsCount(bookId) {

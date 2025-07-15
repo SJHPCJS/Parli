@@ -27,11 +27,11 @@
     
     <!-- 学习统计 -->
     <view class="stats-container">
-      <view class="stat-card">
+      <view class="stat-card" @click="goWordList('learned')">
         <view class="stat-number">{{ learnedCount }}</view>
         <view class="stat-label">已学单词</view>
       </view>
-      <view class="stat-card">
+      <view class="stat-card" @click="goWordList('wrong')">
         <view class="stat-number">{{ wrongCount }}</view>
         <view class="stat-label">错题数量</view>
       </view>
@@ -80,8 +80,10 @@
 import { 
   getCurrentBook, 
   getCurrentBookWords, 
-  getCurrentBookLearnedWords, 
+  getCurrentBookLearnedWords,
+  getCurrentBookLearnedWordsAsync, 
   getCurrentBookWrongWords,
+  getCurrentBookWrongWordsAsync,
   getBookProgress
 } from '@/utils/bookData.js'
 
@@ -113,18 +115,25 @@ export default {
     this.loadStats()
   },
   methods: {
-    loadStats() {
-      this.currentBook = getCurrentBook()
-      const learnedWords = getCurrentBookLearnedWords()
-      const wrongWords = getCurrentBookWrongWords()
-      
-      this.learnedCount = learnedWords.length
-      this.wrongCount = wrongWords.length
-      
-      // 计算进度百分比
-      if (this.currentBook.wordCount > 0) {
-        this.progressPercent = Math.round((this.learnedCount / this.currentBook.wordCount) * 100)
-      } else {
+    async loadStats() {
+      try {
+        this.currentBook = getCurrentBook()
+        const learnedWords = await getCurrentBookLearnedWordsAsync()
+        const wrongWords = await getCurrentBookWrongWordsAsync()
+        
+        this.learnedCount = learnedWords.length
+        this.wrongCount = wrongWords.length
+        
+        // 计算进度百分比
+        if (this.currentBook.wordCount > 0) {
+          this.progressPercent = Math.round((this.learnedCount / this.currentBook.wordCount) * 100)
+        } else {
+          this.progressPercent = 0
+        }
+      } catch (error) {
+        console.error('加载统计数据失败:', error)
+        this.learnedCount = 0
+        this.wrongCount = 0
         this.progressPercent = 0
       }
     },
@@ -150,39 +159,30 @@ export default {
     },
     
     goQuiz() {
-      const currentBookWords = getCurrentBookWords()
-      const learnedWords = getCurrentBookLearnedWords()
-      
-      if (currentBookWords.length === 0) {
-        uni.showToast({
-          title: '当前书籍没有单词',
-          icon: 'none'
-        })
-        return
-      }
-      
-      if (learnedWords.length < 5) {
-        uni.showModal({
-          title: '提示',
-          content: '建议至少学习5个单词后再进行随机抽查，这样测试效果会更好。',
-          confirmText: '继续测试',
-          cancelText: '去学习',
-          success: (res) => {
-            if (res.confirm) {
-              uni.navigateTo({
-                url: '/pages/quiz/quiz'
-              })
-            } else {
-              this.goLearn()
-            }
-          }
-        })
-        return
-      }
-      
       uni.navigateTo({
         url: '/pages/quiz/quiz'
       })
+    },
+    
+    // 跳转到单词列表页面
+    goWordList(type) {
+      // 添加加载提示
+      if (type === 'all') {
+        uni.showLoading({
+          title: '加载中...'
+        })
+        // 给个小延迟让用户看到加载提示
+        setTimeout(() => {
+          uni.hideLoading()
+          uni.navigateTo({
+            url: `/pages/wordList/wordList?type=${type}`
+          })
+        }, 300)
+      } else {
+        uni.navigateTo({
+          url: `/pages/wordList/wordList?type=${type}`
+        })
+      }
     }
   }
 }
@@ -296,6 +296,13 @@ export default {
   text-align: center;
   backdrop-filter: blur(10px);
   border: 1rpx solid rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.stat-card:active {
+  transform: scale(0.98);
+  background: rgba(255, 255, 255, 0.25);
 }
 
 .stat-number {

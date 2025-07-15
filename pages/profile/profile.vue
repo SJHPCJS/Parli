@@ -202,16 +202,21 @@ export default {
       let totalWrong = 0
       let completedBooks = 0
       
-      bookList.forEach(book => {
-        const progress = getBookProgress(book.id)
-        totalLearned += progress.learnedWords.length
-        totalWrong += progress.wrongWords.length
-        
-        // 检查是否完成了这本书
-        if (progress.learnedWords.length >= book.wordCount) {
-          completedBooks++
-        }
-      })
+      if (bookList && bookList.length > 0) {
+        bookList.forEach(book => {
+          const progress = getBookProgress(book.id)
+          const learnedWords = progress && progress.learnedWords ? progress.learnedWords : []
+          const wrongWords = progress && progress.wrongWords ? progress.wrongWords : []
+          
+          totalLearned += learnedWords.length
+          totalWrong += wrongWords.length
+          
+          // 检查是否完成了这本书
+          if (learnedWords.length >= book.wordCount) {
+            completedBooks++
+          }
+        })
+      }
       
       this.totalLearnedWords = totalLearned
       this.totalWrongWords = totalWrong
@@ -249,9 +254,10 @@ export default {
     
     getBookProgressPercent(bookId) {
       const progress = getBookProgress(bookId)
-      const book = bookList.find(b => b.id === bookId)
+      const book = bookList && bookList.find ? bookList.find(b => b.id === bookId) : null
       if (!book) return 0
-      return Math.round((progress.learnedWords.length / book.wordCount) * 100)
+      const learnedWords = progress && progress.learnedWords ? progress.learnedWords : []
+      return Math.round((learnedWords.length / book.wordCount) * 100)
     },
     
     handleLogin() {
