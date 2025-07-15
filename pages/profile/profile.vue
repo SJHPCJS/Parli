@@ -4,18 +4,31 @@
     <view class="user-section">
       <view class="avatar-container">
         <view class="avatar">👤</view>
-        <view class="login-btn" @click="handleLogin">
-          <text>{{ userInfo.nickName || '点击登录' }}</text>
+        <view class="user-info">
+          <view class="user-name">{{ currentUser ? currentUser.nickname : '未登录' }}</view>
+          <view class="user-subtitle">
+            <text v-if="currentUser">@{{ currentUser.username }}</text>
+            <text v-else>点击右上角登录</text>
+          </view>
+        </view>
+        <view class="login-status">
+          <button v-if="!isLoggedIn" class="login-btn" @click="goToLogin">
+            登录
+          </button>
+          <button v-else class="logout-btn" @click="handleLogout">
+            退出
+          </button>
         </view>
       </view>
-      <view class="user-stats">
+      
+      <view v-if="currentUser" class="user-stats">
         <view class="stat-item">
           <view class="stat-number">{{ totalLearnedWords }}</view>
           <view class="stat-label">总学习词汇</view>
         </view>
         <view class="stat-item">
-          <view class="stat-number">{{ totalStudyDays }}</view>
-          <view class="stat-label">学习天数</view>
+          <view class="stat-number">{{ userStats ? userStats.registeredDays : 0 }}</view>
+          <view class="stat-label">注册天数</view>
         </view>
         <view class="stat-item">
           <view class="stat-number">{{ totalWrongWords }}</view>
@@ -25,7 +38,7 @@
     </view>
 
     <!-- 学习成就 -->
-    <view class="achievements-section">
+    <view v-if="isLoggedIn" class="achievements-section">
       <view class="section-title">
         <text>🏆 学习成就</text>
       </view>
@@ -47,7 +60,7 @@
     </view>
 
     <!-- 书籍学习进度 -->
-    <view class="books-progress-section">
+    <view v-if="isLoggedIn" class="books-progress-section">
       <view class="section-title">
         <text>📚 书籍进度</text>
       </view>
@@ -72,30 +85,40 @@
       </view>
     </view>
 
+    <!-- 用户信息详情 -->
+    <view v-if="isLoggedIn" class="user-details-section">
+      <view class="section-title">
+        <text>👤 账户信息</text>
+      </view>
+      <view class="details-list">
+        <view class="detail-item">
+          <view class="detail-label">用户名</view>
+          <view class="detail-value">{{ currentUser.username }}</view>
+        </view>
+        <view class="detail-item">
+          <view class="detail-label">昵称</view>
+          <view class="detail-value">{{ currentUser.nickname }}</view>
+        </view>
+        <view class="detail-item">
+          <view class="detail-label">注册时间</view>
+          <view class="detail-value">{{ formatDate(currentUser.createdAt) }}</view>
+        </view>
+        <view class="detail-item">
+          <view class="detail-label">最后登录</view>
+          <view class="detail-value">{{ formatDate(currentUser.lastLoginAt) }}</view>
+        </view>
+      </view>
+    </view>
+
     <!-- 设置和功能 -->
     <view class="settings-section">
       <view class="section-title">
         <text>⚙️ 设置</text>
       </view>
       <view class="settings-list">
-        <view class="setting-item" @click="showStudyStats">
+        <view v-if="isLoggedIn" class="setting-item" @click="showStudyStats">
           <view class="setting-icon">📊</view>
           <view class="setting-text">学习统计</view>
-          <view class="setting-arrow">></view>
-        </view>
-        <view class="setting-item" @click="exportAllData">
-          <view class="setting-icon">📤</view>
-          <view class="setting-text">导出数据</view>
-          <view class="setting-arrow">></view>
-        </view>
-        <view class="setting-item" @click="importData">
-          <view class="setting-icon">📥</view>
-          <view class="setting-text">导入数据</view>
-          <view class="setting-arrow">></view>
-        </view>
-        <view class="setting-item" @click="resetAllData">
-          <view class="setting-icon">🔄</view>
-          <view class="setting-text">重置所有数据</view>
           <view class="setting-arrow">></view>
         </view>
         <view class="setting-item" @click="showAbout">
@@ -103,7 +126,21 @@
           <view class="setting-text">关于应用</view>
           <view class="setting-arrow">></view>
         </view>
+        <view v-if="isLoggedIn" class="setting-item danger" @click="confirmLogout">
+          <view class="setting-icon">🚪</view>
+          <view class="setting-text">退出登录</view>
+          <view class="setting-arrow">></view>
+        </view>
       </view>
+    </view>
+
+    <!-- 未登录状态提示 -->
+    <view v-if="!isLoggedIn" class="login-prompt">
+      <view class="prompt-icon">🔐</view>
+      <view class="prompt-title">登录以保存学习进度</view>
+      <view class="prompt-desc">登录后您的学习记录将自动云端保存，换设备也不会丢失</view>
+      <button class="prompt-login-btn" @click="goToLogin">立即登录</button>
+      <button class="prompt-register-btn" @click="goToRegister">注册新账号</button>
     </view>
   </view>
 </template>
@@ -111,18 +148,26 @@
 <script>
 import { 
   bookList, 
-  getBookProgress,
-  saveBookProgress
+  getCurrentBook,
+  getCurrentBookLearnedWordsWithCache,
+  getCurrentBookWrongWordsWithCache
 } from '@/utils/bookData.js'
+import userManager, { 
+  isLoggedIn, 
+  getCurrentUser, 
+  logout, 
+  getUserStats 
+} from '@/utils/userManager.js'
 
 export default {
   data() {
     return {
       bookList,
-      userInfo: {},
+      currentUser: null,
+      userStats: null,
       totalLearnedWords: 0,
-      totalStudyDays: 1,
       totalWrongWords: 0,
+      completedBooks: 0,
       achievements: [
         {
           id: 1,
@@ -167,83 +212,92 @@ export default {
         {
           id: 6,
           title: '坚持者',
-          description: '连续学习7天',
+          description: '注册7天以上',
           icon: '🔥',
           unlocked: false,
-          condition: (stats) => stats.totalStudyDays >= 7
+          condition: (stats) => stats.registeredDays >= 7
         }
       ]
     }
   },
+  
+  computed: {
+    isLoggedIn() {
+      return isLoggedIn()
+    }
+  },
+  
   onLoad() {
     this.loadUserData()
   },
+  
   onShow() {
     this.loadUserData()
   },
+  
+  onLoad() {
+    // 监听学习完成事件
+    uni.$on('learningComplete', () => {
+      this.loadUserData() // 重新加载用户数据
+    })
+  },
+  
+  onUnload() {
+    // 移除事件监听
+    uni.$off('learningComplete')
+  },
+  
   methods: {
     loadUserData() {
       // 加载用户信息
-      try {
-        this.userInfo = uni.getStorageSync('userInfo') || {}
-      } catch (e) {
-        this.userInfo = {}
+      this.currentUser = getCurrentUser()
+      this.userStats = getUserStats()
+      
+      if (this.isLoggedIn) {
+        // 计算总学习统计
+        this.calculateTotalStats()
+        
+        // 更新成就状态
+        this.updateAchievements()
       }
-      
-      // 计算总学习统计
-      this.calculateTotalStats()
-      
-      // 更新成就状态
-      this.updateAchievements()
     },
     
-    calculateTotalStats() {
-      let totalLearned = 0
-      let totalWrong = 0
-      let completedBooks = 0
-      
-      if (bookList && bookList.length > 0) {
-        bookList.forEach(book => {
-          const progress = getBookProgress(book.id)
-          const learnedWords = progress && progress.learnedWords ? progress.learnedWords : []
-          const wrongWords = progress && progress.wrongWords ? progress.wrongWords : []
+    async calculateTotalStats() {
+      try {
+        let totalLearned = 0
+        let totalWrong = 0
+        let completedBooks = 0
+        
+        if (bookList && bookList.length > 0) {
+          // 由于我们只有一本书，直接获取当前书的数据
+          const learnedWords = await getCurrentBookLearnedWordsWithCache()
+          const wrongWords = await getCurrentBookWrongWordsWithCache()
           
-          totalLearned += learnedWords.length
-          totalWrong += wrongWords.length
+          totalLearned = learnedWords.length
+          totalWrong = wrongWords.length
           
           // 检查是否完成了这本书
-          if (learnedWords.length >= book.wordCount) {
-            completedBooks++
+          const currentBook = await getCurrentBook()
+          if (currentBook && learnedWords.length >= currentBook.wordCount) {
+            completedBooks = 1
           }
-        })
-      }
-      
-      this.totalLearnedWords = totalLearned
-      this.totalWrongWords = totalWrong
-      this.completedBooks = completedBooks
-      
-      // 计算学习天数（简化版本）
-      try {
-        const firstStudyDate = uni.getStorageSync('firstStudyDate')
-        if (firstStudyDate) {
-          const now = new Date()
-          const firstDate = new Date(firstStudyDate)
-          const diffTime = Math.abs(now - firstDate)
-          this.totalStudyDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-        } else {
-          // 如果是第一次使用，记录开始时间
-          uni.setStorageSync('firstStudyDate', new Date().toISOString())
-          this.totalStudyDays = 1
         }
-      } catch (e) {
-        this.totalStudyDays = 1
+        
+        this.totalLearnedWords = totalLearned
+        this.totalWrongWords = totalWrong
+        this.completedBooks = completedBooks
+      } catch (error) {
+        console.error('计算统计失败:', error)
+        this.totalLearnedWords = 0
+        this.totalWrongWords = 0
+        this.completedBooks = 0
       }
     },
     
     updateAchievements() {
       const stats = {
         totalLearnedWords: this.totalLearnedWords,
-        totalStudyDays: this.totalStudyDays,
+        registeredDays: this.userStats ? this.userStats.registeredDays : 0,
         completedBooks: this.completedBooks
       }
       
@@ -253,128 +307,119 @@ export default {
     },
     
     getBookProgressPercent(bookId) {
-      const progress = getBookProgress(bookId)
-      const book = bookList && bookList.find ? bookList.find(b => b.id === bookId) : null
-      if (!book) return 0
-      const learnedWords = progress && progress.learnedWords ? progress.learnedWords : []
-      return Math.round((learnedWords.length / book.wordCount) * 100)
-    },
-    
-    handleLogin() {
-      // 微信登录功能
-      uni.getUserProfile({
-        desc: '用于完善会员资料',
-        success: (res) => {
-          this.userInfo = res.userInfo
-          uni.setStorageSync('userInfo', res.userInfo)
-          uni.showToast({
-            title: '登录成功',
-            icon: 'success'
-          })
-        },
-        fail: () => {
-          uni.showToast({
-            title: '登录失败',
-            icon: 'none'
-          })
-        }
-      })
-    },
-    
-    showStudyStats() {
-      let statsText = '📊 详细学习统计\n\n'
-      statsText += `总学习词汇：${this.totalLearnedWords}个\n`
-      statsText += `学习天数：${this.totalStudyDays}天\n`
-      statsText += `总错题数：${this.totalWrongWords}个\n`
-      statsText += `完成书籍：${this.completedBooks}本\n\n`
+      if (!this.isLoggedIn) return 0
       
-      bookList.forEach(book => {
-        const progress = getBookProgress(book.id)
-        const percent = this.getBookProgressPercent(book.id)
-        statsText += `${book.title}：${percent}%\n`
-      })
-      
-      uni.showModal({
-        title: '学习统计',
-        content: statsText,
-        showCancel: false
-      })
-    },
-    
-    exportAllData() {
-      const exportData = {
-        exportTime: new Date().toLocaleString(),
-        userInfo: this.userInfo,
-        stats: {
-          totalLearnedWords: this.totalLearnedWords,
-          totalStudyDays: this.totalStudyDays,
-          totalWrongWords: this.totalWrongWords
-        },
-        books: {}
+      try {
+        const book = bookList.find(b => b.id === bookId)
+        if (!book) return 0
+        
+        const learnedWords = getCurrentBookLearnedWords()
+        const percent = Math.round((learnedWords.length / book.wordCount) * 100)
+        return Math.min(percent, 100)
+      } catch (error) {
+        return 0
       }
+    },
+    
+    formatDate(dateString) {
+      if (!dateString) return '未知'
       
-      bookList.forEach(book => {
-        exportData.books[book.id] = {
-          title: book.title,
-          progress: getBookProgress(book.id),
-          progressPercent: this.getBookProgressPercent(book.id)
-        }
-      })
-      
-      uni.showModal({
-        title: '导出数据',
-        content: '学习数据已生成，请在控制台查看并复制保存。',
-        showCancel: false,
-        success: () => {
-          console.log('Export data:', JSON.stringify(exportData, null, 2))
-        }
+      try {
+        const date = new Date(dateString)
+        return date.toLocaleDateString('zh-CN', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit'
+        })
+      } catch (error) {
+        return '未知'
+      }
+    },
+    
+    goToLogin() {
+      uni.navigateTo({
+        url: '/pages/login/login'
       })
     },
     
-    importData() {
-      uni.showModal({
-        title: '导入数据',
-        content: '此功能需要先导出数据，然后通过开发者工具导入。',
-        showCancel: false
+    goToRegister() {
+      uni.navigateTo({
+        url: '/pages/register/register'
       })
     },
     
-    resetAllData() {
+    confirmLogout() {
       uni.showModal({
-        title: '重置所有数据',
-        content: '确定要重置所有学习数据吗？此操作不可恢复！',
+        title: '确认退出',
+        content: '退出登录后，您需要重新登录才能查看学习进度。确定要退出吗？',
         success: (res) => {
           if (res.confirm) {
-            // 重置所有书籍进度
-            bookList.forEach(book => {
-              const emptyProgress = {
-                learnedWords: [],
-                wrongWords: [],
-                reviewWords: []
-              }
-              saveBookProgress(book.id, emptyProgress)
-            })
-            
-            // 重置用户数据
-            uni.removeStorageSync('userInfo')
-            uni.removeStorageSync('firstStudyDate')
-            
-            // 重新加载数据
-            this.loadUserData()
-            
-            uni.showToast({
-              title: '重置成功',
-              icon: 'success'
-            })
+            this.handleLogout()
           }
         }
       })
     },
     
-    showAbout() {
+    handleLogout() {
+      const result = logout()
+      if (result.success) {
+        uni.showToast({
+          title: result.message,
+          icon: 'success'
+        })
+        
+        // 清除本地数据
+        this.currentUser = null
+        this.userStats = null
+        this.totalLearnedWords = 0
+        this.totalWrongWords = 0
+        this.completedBooks = 0
+        
+        // 跳转到登录页
+        setTimeout(() => {
+          uni.reLaunch({
+            url: '/pages/login/login'
+          })
+        }, 1500)
+      } else {
+        uni.showToast({
+          title: result.message,
+          icon: 'none'
+        })
+      }
+    },
+    
+    showStudyStats() {
+      const stats = `学习统计：
+      
+总学习词汇：${this.totalLearnedWords} 个
+总错题数：${this.totalWrongWords} 个
+完成书籍：${this.completedBooks} 本
+注册天数：${this.userStats ? this.userStats.registeredDays : 0} 天
+
+继续努力学习意大利语！🇮🇹`
+      
       uni.showModal({
-        title: '关于记意 Parli',
-        content: '记意 Parli v1.0\n\n一个简洁高效的意大利语单词学习应用\n\n功能特色：\n• 多书籍学习系统\n• 智能错题复习\n• 学习进度追踪\n• 随机抽查测试\n\n让意大利语学习变得更简单！',
+        title: '📊 学习统计',
+        content: stats,
+        showCancel: false
+      })
+    },
+    
+    showAbout() {
+      const about = `记意 Parli v1.0
+
+一款专为中文用户设计的意大利语学习应用
+
+📖 词典：45893个词条
+🎯 功能：学习、复习、测试
+🌟 特色：多用户、进度保存、成就系统
+
+让意大利语学习变得简单有趣！`
+      
+      uni.showModal({
+        title: 'ℹ️ 关于应用',
+        content: about,
         showCancel: false
       })
     }
@@ -390,34 +435,72 @@ export default {
 }
 
 .user-section {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.95);
   border-radius: 24rpx;
-  padding: 50rpx;
-  margin-bottom: 40rpx;
+  padding: 40rpx;
+  margin-bottom: 30rpx;
   backdrop-filter: blur(10px);
-  text-align: center;
+  box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.1);
 }
 
 .avatar-container {
-  margin-bottom: 40rpx;
+  display: flex;
+  align-items: center;
+  margin-bottom: 30rpx;
 }
 
 .avatar {
   width: 120rpx;
   height: 120rpx;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border-radius: 60rpx;
-  background: rgba(255, 255, 255, 0.2);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 60rpx;
-  margin: 0 auto 30rpx auto;
+  margin-right: 30rpx;
+  color: white;
+}
+
+.user-info {
+  flex: 1;
+}
+
+.user-name {
+  font-size: 40rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 8rpx;
+}
+
+.user-subtitle {
+  font-size: 28rpx;
+  color: #666;
+}
+
+.login-status {
+  display: flex;
+  flex-direction: column;
+  gap: 10rpx;
+}
+
+.login-btn, .logout-btn {
+  padding: 16rpx 32rpx;
+  border-radius: 12rpx;
+  font-size: 28rpx;
+  border: none;
+  transition: all 0.3s ease;
 }
 
 .login-btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
-  font-size: 32rpx;
-  font-weight: bold;
+}
+
+.logout-btn {
+  background: #f8f9fa;
+  color: #666;
+  border: 1rpx solid #e9ecef;
 }
 
 .user-stats {
@@ -428,36 +511,37 @@ export default {
 
 .stat-item {
   text-align: center;
-  color: white;
+  flex: 1;
 }
 
 .stat-number {
   font-size: 48rpx;
   font-weight: bold;
-  color: #FFD700;
-  margin-bottom: 10rpx;
+  color: #667eea;
+  margin-bottom: 8rpx;
 }
 
 .stat-label {
   font-size: 24rpx;
-  opacity: 0.9;
-}
-
-.achievements-section,
-.books-progress-section,
-.settings-section {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 20rpx;
-  padding: 40rpx;
-  margin-bottom: 30rpx;
-  backdrop-filter: blur(10px);
+  color: #666;
 }
 
 .section-title {
   font-size: 32rpx;
   font-weight: bold;
   color: white;
+  margin-bottom: 20rpx;
+  display: flex;
+  align-items: center;
+}
+
+.achievements-section, .books-progress-section, .user-details-section, .settings-section {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 24rpx;
+  padding: 30rpx;
   margin-bottom: 30rpx;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.1);
 }
 
 .achievements-grid {
@@ -469,52 +553,43 @@ export default {
 .achievement-card {
   display: flex;
   align-items: center;
-  padding: 30rpx;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 15rpx;
-  position: relative;
-  opacity: 0.5;
+  padding: 20rpx;
+  background: #f8f9fa;
+  border-radius: 16rpx;
+  opacity: 0.6;
+  transition: all 0.3s ease;
 }
 
 .achievement-card.unlocked {
   opacity: 1;
-  background: rgba(255, 215, 0, 0.2);
+  background: linear-gradient(135deg, #e8f5e8 0%, #f0f8f0 100%);
+  border: 2rpx solid #4CAF50;
 }
 
 .achievement-icon {
   font-size: 48rpx;
-  margin-right: 30rpx;
+  margin-right: 20rpx;
 }
 
 .achievement-info {
   flex: 1;
-  color: white;
 }
 
 .achievement-title {
-  font-size: 28rpx;
+  font-size: 32rpx;
   font-weight: bold;
+  color: #333;
   margin-bottom: 8rpx;
 }
 
 .achievement-desc {
   font-size: 24rpx;
-  opacity: 0.8;
+  color: #666;
 }
 
 .achievement-badge {
-  position: absolute;
-  top: 10rpx;
-  right: 10rpx;
-  width: 40rpx;
-  height: 40rpx;
-  background: #FFD700;
-  border-radius: 20rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 20rpx;
-  color: #333;
+  color: #4CAF50;
+  font-size: 32rpx;
   font-weight: bold;
 }
 
@@ -528,32 +603,32 @@ export default {
   display: flex;
   align-items: center;
   padding: 20rpx;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 15rpx;
+  background: #f8f9fa;
+  border-radius: 16rpx;
 }
 
 .book-icon {
-  font-size: 40rpx;
-  margin-right: 30rpx;
+  font-size: 48rpx;
+  margin-right: 20rpx;
 }
 
 .book-info {
   flex: 1;
-  color: white;
 }
 
 .book-title {
   font-size: 28rpx;
   font-weight: bold;
-  margin-bottom: 15rpx;
+  color: #333;
+  margin-bottom: 12rpx;
 }
 
 .progress-bar {
   height: 8rpx;
-  background: rgba(255, 255, 255, 0.3);
+  background: #e9ecef;
   border-radius: 4rpx;
   overflow: hidden;
-  margin-bottom: 10rpx;
+  margin-bottom: 8rpx;
 }
 
 .progress-fill {
@@ -563,42 +638,129 @@ export default {
 
 .progress-text {
   font-size: 24rpx;
-  opacity: 0.8;
+  color: #666;
+}
+
+.details-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.detail-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16rpx 0;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+
+.detail-label {
+  font-size: 28rpx;
+  color: #666;
+}
+
+.detail-value {
+  font-size: 28rpx;
+  color: #333;
+  font-weight: 500;
 }
 
 .settings-list {
   display: flex;
   flex-direction: column;
-  gap: 15rpx;
 }
 
 .setting-item {
   display: flex;
   align-items: center;
-  padding: 30rpx;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 15rpx;
-  color: white;
-  transition: all 0.3s ease;
+  padding: 32rpx 0;
+  border-bottom: 1rpx solid #f0f0f0;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
 }
 
 .setting-item:active {
-  background: rgba(255, 255, 255, 0.2);
-  transform: scale(0.98);
+  background-color: rgba(102, 126, 234, 0.1);
+}
+
+.setting-item.danger {
+  color: #dc3545;
+}
+
+.setting-item.danger .setting-text {
+  color: #dc3545;
 }
 
 .setting-icon {
   font-size: 32rpx;
-  margin-right: 30rpx;
+  margin-right: 24rpx;
+  width: 32rpx;
+  text-align: center;
 }
 
 .setting-text {
   flex: 1;
-  font-size: 28rpx;
+  font-size: 32rpx;
+  color: #333;
 }
 
 .setting-arrow {
-  font-size: 24rpx;
-  opacity: 0.6;
+  font-size: 32rpx;
+  color: #ccc;
+}
+
+.login-prompt {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 24rpx;
+  padding: 60rpx 40rpx;
+  text-align: center;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.1);
+}
+
+.prompt-icon {
+  font-size: 120rpx;
+  margin-bottom: 30rpx;
+}
+
+.prompt-title {
+  font-size: 36rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 20rpx;
+}
+
+.prompt-desc {
+  font-size: 28rpx;
+  color: #666;
+  line-height: 1.6;
+  margin-bottom: 40rpx;
+}
+
+.prompt-login-btn, .prompt-register-btn {
+  width: 100%;
+  height: 80rpx;
+  border-radius: 16rpx;
+  font-size: 32rpx;
+  font-weight: bold;
+  border: none;
+  margin-bottom: 20rpx;
+  transition: all 0.3s ease;
+}
+
+.prompt-login-btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.prompt-register-btn {
+  background: #f8f9fa;
+  color: #667eea;
+  border: 2rpx solid #667eea;
+}
+
+.prompt-login-btn:active, .prompt-register-btn:active {
+  transform: scale(0.98);
 }
 </style> 

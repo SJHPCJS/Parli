@@ -70,21 +70,38 @@ import {
   setCurrentBook, 
   getBookProgress,
   saveBookProgress,
-  getCurrentBookWords
+  getCurrentBookWords,
+  getCurrentBookWrongWordsAsync
 } from '@/utils/bookData.js'
 
 export default {
   data() {
     return {
       bookList,
-      currentBook: {}
+      currentBook: {},
+      bookProgresses: {}, // 缓存书籍进度数据
+      bookWrongCounts: {} // 缓存错题数据
     }
   },
-  onLoad() {
-    this.currentBook = getCurrentBook()
+  async onLoad() {
+    this.currentBook = await getCurrentBook()
+    this.loadBookStatistics()
   },
-  onShow() {
-    this.currentBook = getCurrentBook()
+  async onShow() {
+    this.currentBook = await getCurrentBook()
+    this.loadBookStatistics()
+  },
+  
+  onLoad() {
+    // 监听学习完成事件
+    uni.$on('learningComplete', () => {
+      this.loadBookStatistics() // 重新加载书籍统计
+    })
+  },
+  
+  onUnload() {
+    // 移除事件监听
+    uni.$off('learningComplete')
   },
   methods: {
     selectBook(book) {
@@ -108,18 +125,35 @@ export default {
     },
     
     getBookProgressPercent(bookId) {
-      const progress = getBookProgress(bookId)
-      const bookWords = this.getBookWordsCount(bookId)
-      if (bookWords === 0) return 0
-      const learnedWords = progress && progress.learnedWords ? progress.learnedWords : []
-      return Math.round((learnedWords.length / bookWords) * 100)
+      const progress = this.bookProgresses[bookId]
+      if (!progress) return 0
+      return progress.percentage || 0
     },
     
     getBookWrongCount(bookId) {
-      const progress = getBookProgress(bookId)
-      const wrongWords = progress && progress.wrongWords ? progress.wrongWords : []
-      return wrongWords.length
+      return this.bookWrongCounts[bookId] || 0
     },
+    
+         async loadBookStatistics() {
+       try {
+         // 为每本书异步加载统计数据
+         for (const book of this.bookList) {
+           const progress = await getBookProgress(book.id)
+           
+           // 由于系统只有一本书，直接获取当前书的错题数
+           if (book.id === 1) { // 当前书的ID
+             const wrongWords = await getCurrentBookWrongWordsAsync()
+             this.$set(this.bookWrongCounts, book.id, wrongWords.length)
+           } else {
+             this.$set(this.bookWrongCounts, book.id, 0)
+           }
+           
+           this.$set(this.bookProgresses, book.id, progress)
+         }
+       } catch (error) {
+         console.error('加载书籍统计失败:', error)
+       }
+     },
     
     getBookWordsCount(bookId) {
       const book = bookList.find(b => b.id === bookId)

@@ -146,9 +146,9 @@
 import { 
   getCurrentBook, 
   getCurrentBookWords, 
-  getRandomWordsForQuiz,
-  posMap
+  getRandomWordsForQuiz
 } from '@/utils/bookData.js'
+import { posMap } from '@/utils/wordData.js'
 
 export default {
   data() {

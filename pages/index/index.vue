@@ -81,9 +81,9 @@ import {
   getCurrentBook, 
   getCurrentBookWords, 
   getCurrentBookLearnedWords,
-  getCurrentBookLearnedWordsAsync, 
+  getCurrentBookLearnedWordsWithCache, 
   getCurrentBookWrongWords,
-  getCurrentBookWrongWordsAsync,
+  getCurrentBookWrongWordsWithCache,
   getBookProgress
 } from '@/utils/bookData.js'
 
@@ -114,18 +114,28 @@ export default {
   onShow() {
     this.loadStats()
   },
+  onLoad() {
+    // 监听学习完成事件
+    uni.$on('learningComplete', () => {
+      this.loadStats() // 重新加载统计数据
+    })
+  },
+  onUnload() {
+    // 移除事件监听
+    uni.$off('learningComplete')
+  },
   methods: {
     async loadStats() {
       try {
-        this.currentBook = getCurrentBook()
-        const learnedWords = await getCurrentBookLearnedWordsAsync()
-        const wrongWords = await getCurrentBookWrongWordsAsync()
+        this.currentBook = await getCurrentBook()
+        const learnedWords = await getCurrentBookLearnedWordsWithCache()
+        const wrongWords = await getCurrentBookWrongWordsWithCache()
         
         this.learnedCount = learnedWords.length
         this.wrongCount = wrongWords.length
         
         // 计算进度百分比
-        if (this.currentBook.wordCount > 0) {
+        if (this.currentBook && this.currentBook.wordCount > 0) {
           this.progressPercent = Math.round((this.learnedCount / this.currentBook.wordCount) * 100)
         } else {
           this.progressPercent = 0
@@ -135,6 +145,7 @@ export default {
         this.learnedCount = 0
         this.wrongCount = 0
         this.progressPercent = 0
+        this.currentBook = { title: '意大利语词典', wordCount: 0, cover: '📖' }
       }
     },
     

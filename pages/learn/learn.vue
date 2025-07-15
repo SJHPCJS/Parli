@@ -40,6 +40,11 @@
         </view>
         <button v-if="step1Result" class="next-btn" @click="goToStep2">下一步：拼写练习</button>
       </view>
+      
+      <!-- 跳过按钮 - 选择题阶段 -->
+      <view v-if="!showResult" class="skip-container">
+        <button class="skip-btn" @click="skipCurrentWord">跳过此单词</button>
+      </view>
     </view>
 
     <!-- Step 2: 拼写练习 -->
@@ -84,6 +89,11 @@
             </view>
           </view>
         </view>
+      </view>
+      
+      <!-- 跳过按钮 - 拼写阶段 -->
+      <view class="skip-container">
+        <button class="skip-btn" @click="skipCurrentWord">跳过此单词</button>
       </view>
     </view>
 
@@ -169,6 +179,7 @@
 import { 
   getCurrentBookWords, 
   getCurrentBookWordsAsync,
+  getCurrentBookLearnedWordsAsync,
   addWrongWordToCurrentBook, 
   removeWrongWordFromCurrentBook, 
   addLearnedWordToCurrentBook, 
@@ -240,20 +251,33 @@ export default {
         this.options = []
         this.currentWordDetail = null // 重置词汇详情
         
-        // 从当前书籍中随机选择单词进行学习
-        const availableWords = await getCurrentBookWordsAsync()
+        // 从当前书籍中获取未学习的单词进行学习
+        const allWords = await getCurrentBookWordsAsync()
+        const learnedWords = await getCurrentBookLearnedWordsAsync()
+        const learnedWordIds = learnedWords.map(word => word.id)
+        
+        // 过滤掉已学习的单词
+        const availableWords = allWords.filter(word => !learnedWordIds.includes(word.id))
         
         uni.hideLoading()
         
         if (!availableWords || availableWords.length === 0) {
           this.dataLoaded = true
           uni.showModal({
-            title: '提示',
-            content: '当前书籍没有单词可供学习，请先选择其他书籍。',
-            success: () => {
-              uni.switchTab({
-                url: '/pages/books/books'
-              })
+            title: '🎉 恭喜完成学习！',
+            content: '您已经学完了当前书籍的所有单词！可以继续复习错题或开始新的学习挑战。',
+            confirmText: '复习错题',
+            cancelText: '回到首页',
+            success: (res) => {
+              if (res.confirm) {
+                uni.switchTab({
+                  url: '/pages/review/review'
+                })
+              } else {
+                uni.switchTab({
+                  url: '/pages/index/index'
+                })
+              }
             }
           })
           return
@@ -378,6 +402,10 @@ export default {
       
       // 如果选择错误，记录错题，并在2秒后允许重新选择
       if (!this.step1Result) {
+        // 只有选择题错误才算错题
+        if (this.current && this.current.id) {
+          addWrongWordToCurrentBook(this.current.id)
+        }
         setTimeout(() => {
           this.showResult = false
           this.selectedOption = -1
@@ -401,13 +429,11 @@ export default {
       this.spellingResult = userAnswer === correctAnswer
       this.showSpellingResult = true
       
-      if (this.spellingResult) {
+      // 只要选择题正确，就算学会了这个单词（不管拼写对错）
+      if (this.step1Result && this.current && this.current.id) {
+        removeWrongWordFromCurrentBook(this.current.id)
+        addLearnedWordToCurrentBook(this.current.id)
         this.correctAnswers++
-        // 如果两步都正确，从错题中移除
-        if (this.step1Result && this.current && this.current.id) {
-          removeWrongWordFromCurrentBook(this.current.id)
-          addLearnedWordToCurrentBook(this.current.id)
-        }
         
         // 获取完整词汇详情
         const fullDetail = getFullWordDetail(this.current.id)
@@ -423,15 +449,16 @@ export default {
           }
         }
         
-        // 拼写正确后延迟显示单词详情
+        // 延迟显示单词详情
         setTimeout(() => {
           this.showWordDetail = true
         }, 1500)
-      } else {
-        this.wrongAnswers++
-        if (this.current && this.current.id) {
-          addWrongWordToCurrentBook(this.current.id)
-        }
+      }
+      
+      // 拼写错误不算错题，只是提示拼写错误
+      if (!this.spellingResult) {
+        // 这里不添加错题，只是显示拼写错误提示
+        console.log('拼写错误，但不计入错题')
       }
     },
     
@@ -448,6 +475,11 @@ export default {
       
       this.currentIndex++
       await this.loadQuestion()
+      
+      // 如果学习完成，触发事件
+      if (this.isCompleted) {
+        uni.$emit('learningComplete')
+      }
     },
     
     restartLearning() {
@@ -456,7 +488,23 @@ export default {
     },
     
     goHome() {
+      // 返回首页时触发事件，确保数据更新
+      uni.$emit('learningComplete')
       uni.navigateBack()
+    },
+    
+    // 跳过当前单词
+    skipCurrentWord() {
+      uni.showModal({
+        title: '跳过单词',
+        content: '确定要跳过这个单词吗？跳过的单词不会被标记为已学会。',
+        success: (res) => {
+          if (res.confirm) {
+            // 直接跳到下一个单词，不标记为已学会
+            this.nextQuestion()
+          }
+        }
+      })
     }
   }
 }
@@ -685,6 +733,27 @@ export default {
 .stat-value {
   font-weight: bold;
   color: #4CAF50;
+}
+
+/* 跳过按钮样式 */
+.skip-container {
+  text-align: center;
+  margin-top: 30rpx;
+}
+
+.skip-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: 2rpx solid rgba(255, 255, 255, 0.3);
+  border-radius: 50rpx;
+  color: rgba(255, 255, 255, 0.8);
+  padding: 20rpx 40rpx;
+  font-size: 28rpx;
+  transition: all 0.3s ease;
+}
+
+.skip-btn:active {
+  background: rgba(255, 255, 255, 0.1);
+  transform: scale(0.95);
 }
 
 /* 单词详情样式 */

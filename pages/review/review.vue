@@ -103,7 +103,6 @@
           <button class="continue-btn" @click="nextQuestion">下一题</button>
         </view>
       </view>
-      </view>
 
       <!-- 完成提示 -->
       <view v-if="isCompleted" class="completion-container">
