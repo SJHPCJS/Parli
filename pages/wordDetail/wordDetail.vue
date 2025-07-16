@@ -10,13 +10,7 @@
         </view>
       </view>
 
-      <!-- 发音按钮 -->
-      <view class="pronunciation-section">
-        <button class="pronunciation-btn" @click="playPronunciation">
-          <text class="pronunciation-icon">🔊</text>
-          <text>点击发音</text>
-        </button>
-      </view>
+
 
       <!-- 释义部分 -->
       <view class="meanings-section">
@@ -165,14 +159,7 @@ export default {
       this.isWrong = wrongWords.some(word => word.id == wordId)
     },
     
-    playPronunciation() {
-      // 简单的发音提示
-      uni.showToast({
-        title: '发音：' + this.wordData.word,
-        icon: 'none',
-        duration: 2000
-      })
-    },
+
     
     toggleLearned() {
       if (this.queryMode) {
@@ -294,29 +281,7 @@ export default {
   display: inline-block;
 }
 
-.pronunciation-section {
-  text-align: center;
-  margin-bottom: 40rpx;
-}
 
-.pronunciation-btn {
-  background: #4CAF50;
-  color: white;
-  border: none;
-  border-radius: 30rpx;
-  padding: 16rpx 32rpx;
-  font-size: 28rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10rpx;
-  width: 200rpx;
-  margin: 0 auto;
-}
-
-.pronunciation-icon {
-  font-size: 32rpx;
-}
 
 .meanings-section, .examples-section, .full-content-section {
   margin-bottom: 40rpx;

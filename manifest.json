@@ -48,6 +48,17 @@
     },
     /* 快应用特有相关 */
     "quickapp" : {},
+    "h5" : {
+        "publicPath" : "/",
+        "router" : {
+            "mode" : "history",
+            "base" : "/parli/"
+        },
+        "devServer" : {
+            "port" : 8080,
+            "disableHostCheck" : true
+        }
+    },
     /* 小程序特有相关 */
     "mp-weixin" : {
         "appid" : "",

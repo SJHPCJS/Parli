@@ -1,9 +1,12 @@
 // utils/userManager.js - 用户管理系统（后端API版本）
 
-// API配置
+// API配置 - 生产环境公网部署
 const API_CONFIG = {
-  baseURL: 'http://localhost:8080/api',
-  timeout: 10000 // 10秒超时
+  baseURL: 'http://39.105.232.242/api', // 生产环境公网IP
+  // 开发环境备用配置：
+  // baseURL: 'http://localhost:8080/api', // 本地开发
+  // baseURL: 'http://192.168.1.12:8080/api', // 局域网测试
+  timeout: 15000 // 15秒超时
 }
 
 // 存储键（仅用于临时数据和token）

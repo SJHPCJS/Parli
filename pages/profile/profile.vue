@@ -529,7 +529,7 @@ export default {
 .section-title {
   font-size: 32rpx;
   font-weight: bold;
-  color: white;
+  color: black;
   margin-bottom: 20rpx;
   display: flex;
   align-items: center;
